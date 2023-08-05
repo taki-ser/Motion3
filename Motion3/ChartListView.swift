@@ -17,15 +17,21 @@ struct ChartListView: View {
         sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
         animation: .default) private var items: FetchedResults<Item>
     
-//    @State var data: [ChartEntry] = []
     var body: some View {
         NavigationView {
             List {
                 ForEach(items) { item in
                     NavigationLink {
                         Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                        if let motion = (item.motion as? [CMDeviceMotion]){
-                            ChartView(data: makeChartEntry(motion: motion))
+                        if let motion = item.motion as? [CMDeviceMotion]{
+                            let entry = makeChartEntry(motion: motion)
+                            ChartView(data: entry)
+//                            let accelerationX = motion.first?.userAcceleration.x
+//                            if let accelerationX = accelerationX
+//                            {
+//                                Text("first acceleration is \(accelerationX)")
+//                            }
+                            
                         } else {
                             Text("Can't show chart")
                         }
@@ -90,14 +96,21 @@ struct ChartListView: View {
     private func makeChartEntry(motion: [CMDeviceMotion]) -> [ChartEntry]{
         var chartEntries: [ChartEntry] = []
 //        self.data = []
-        for deviceMotion in motion {
-            let time = Double(deviceMotion.timestamp) - Double(motion.map {$0.timestamp}[0])
-            let entry = ChartEntry(
-                time: time,
-                value: deviceMotion.userAcceleration.x
-            )
+//        if let motion = motion
+        if let timeZero = motion.first?.timestamp {
+            for deviceMotion in motion {
+                let time = Double(deviceMotion.timestamp) - Double(timeZero)
+                //            let entry = ChartEntry(
+                //                time: time,
+                //                value: deviceMotion.userAcceleration.x
+                //            )
+                let entry:ChartEntry = .init(
+                    time: time,
+                    value: deviceMotion.userAcceleration.x
+                )
                 chartEntries.append(entry)
-//            self.data.append(entry)
+                //            self.data.append(entry)
+            }
         }
         return chartEntries
     }
@@ -111,8 +124,8 @@ struct ChartView: View {
 //    @State var motion: [CMDeviceMotion]
     @State var data: [ChartEntry] = []
     var body: some View {
-        Chart {
-            ForEach(data) {dataPoint in
+        Chart(data, id: \.id) { dataPoint in
+//            ForEach(data) {dataPoint in
                 
                 LineMark(
 //                単に配列を２つ渡すのではなく構造体のプロッタブルを渡す必要がある
@@ -122,7 +135,7 @@ struct ChartView: View {
 //                .foregroundStyle(by: .value("Form", data.from))
                 .lineStyle(StrokeStyle(lineWidth: 1))
 //                .interpolationMethod(.catmullRom)
-            }
+//            }
         }
     }
         
